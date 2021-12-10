@@ -1,48 +1,69 @@
 import discord
-from discord_slash import SlashContext
-from discord_slash.utils.manage_components import create_button, create_actionrow
-from discord_slash.model import ButtonStyle
-from discord.ext import commands
-import typing
+
+def embed(alert:str):
+	embed = discord.Embed()
+	embed.description = alert
+	embed.colour = discord.Colour.purple()
+	return embed
+
+async def send(ctx, alert:str):
+	await ctx.send(embed = embed(alert))
 
 class Alert:
 
-	join_btn_on = [
-		create_actionrow(
-			create_button(
-				style = ButtonStyle.green,
-				label = "Join",
-				emoji = "➡",
-				custom_id = 'join_btn',
-				disabled = False
-			)
-		)
-	]
+	def __init__(self):
+		self.user = None
+		self.bot = None
 
-	join_btn_off = [
-		create_actionrow(
-			create_button(
-				style = ButtonStyle.green,
-				label = "Join",
-				emoji = "➡",
-				custom_id = 'join_btn',
-				disabled = True
-			)
-		)
-	]
+	@classmethod
+	def voice(cls, ctx):
+		voice = cls()
+		voice.user = UserVoice(ctx.author)
+		voice.bot = BotVoice(ctx.bot.user)
+		return voice	
 
-	def __init__(self, client:typing.Union[discord.Client, commands.Bot]):
-		self.client = client
-		self.Embed = discord.Embed()
+
+class UserVoice:
+
+	def __init__(self, user):
+		self.user = user
+
+	async def empty(self, ctx, call:bool = False):
+		await send(ctx, f"You are not in voice channel now")
 	
-	async def vc_empty(self, ctx:SlashContext):
-		self.Embed.title = "สายไหมยังไม่ได้อยู่ในห้องเสียงขณะนี้"
-		self.Embed.description = "ชวนสายไหมเข้าช่องเสียงได้ผ่านปุ่มข้างล่างนี้เลยนะ😊"
-		self.Embed.color = self.client.user.color
-		self.Embed.set_author(name = self.client.user.name, icon_url = self.client.user.avatar_url)
-		await ctx.send(
-			embed = self.Embed, 
-			components = self.join_btn_on
-		)
+	async def join(self, ctx, channel, call_self:bool):
+		await send(ctx, f"{self.user.name} has joined {channel.mention} channel")
+	
+	async def leave(self, ctx):
+		await send(ctx, f"{self.user.name} has left from voice channel")
 
+	async def now_together(self, ctx, user, channel):
+		await send(ctx, f"{user.name} is already in voice channel {channel.mention} with you")
+	
+	async def not_together(self, ctx, user):
+		await send(ctx, f"You are not in voice channel with {user.name} now")
+	
+	async def mustbe_together(self, ctx, user):
+		await send(ctx, f"You have to join voice channel with {user.name} first")
+
+	async def must_join(self, ctx):
+		await send(ctx, "You have to join voice channel first")
+
+class BotVoice:
+	
+	def __init__(self, user):
+		self.user = user
+	
+	async def leave(self, ctx):
+		await send(ctx, f"{self.user.name} has left from voice channel")
+	
+	async def join(self, ctx, channel):
+		await send(ctx, f"{self.user.name} has joined {channel.mention} channel")
+	
+	async def empy(self, ctx):
+		await send(ctx, f"{self.user.name} is not in voice channel now")
+
+class MusicAlert(Alert):pass
+
+class PlayerAlert(Alert):pass
 
