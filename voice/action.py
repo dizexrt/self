@@ -31,7 +31,7 @@ class Voice:
 		return False
 	
 	def pull_source(self, name:str):
-		path = f"sound/{name}.mp3"
+		path = f"voice/source/{name}.mp3"
 		source = discord.FFmpegPCMAudio(source = path)
 		return source
 	

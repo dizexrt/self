@@ -1,19 +1,24 @@
+#System import
 import os
 from online import keep_alive
 from gtts import gTTS
 
+#discord additional import
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext, ComponentContext
 from discord_slash.utils.manage_commands import create_choice, create_option
+
+#owner additional imported
 from alert import Alert
 from voice.action import Voice
 from voice.music import SongAPI
 
+#class for bot Setting
 class Bot:
 	Intents = discord.Intents.all()
-	Prefix = "x."
-	Token = os.environ['TOKEN']
+	Prefix = "l."
+	Token = os.environ['lavender']
 		
 Bot.Intents.members = True
 
@@ -269,12 +274,13 @@ async def _disconnect(ctx:SlashContext):
 	]
 )
 async def _speak(ctx:SlashContext, text:str):
-	join = await voice.join(ctx)
+	join = await voice.join(ctx.author, ctx.channel)
 
 	if join:
 		tts = gTTS(text = text, lang = 'th')
-		tts.save('tts.mp3')
-		source = discord.FFmpegPCMAudio(source = 'tts.mp3')
+		tts.save('voice/source/tts.mp3')
+		source = voice.pull_source('tts')
+
 		try:
 			ctx.voice_client.play(source)
 		except:
@@ -290,10 +296,10 @@ async def _speak(ctx:SlashContext, text:str):
 	guild_ids = Bot.Guilds,
 )
 async def d(ctx:SlashContext):
-	join = await voice.join(ctx)
+	join = await voice.join(ctx.author, ctx.channel)
 
 	if join:
-		source = voice.put_source('ครส')
+		source = voice.pull_source('ครส')
 		try:
 			ctx.voice_client.play(source)
 		except:
