@@ -332,8 +332,9 @@ class SongAPI:
 
 	async def setup(self, guild:discord.Guild):
 		channel = await guild.create_text_channel(name = f"ห้องของ {self.client.user.name}")
-		queue = await channel.send(embed = Queue.default(guild))
-		player = await channel.send(embed = Player.default(guild))
+		queue = await channel.send(embed = Queue.default(guild), components = ComponentQueue.turn_off())
+		player = await channel.send(embed = Player.default(guild),
+		components = ComponentPlayer.turn_off())
 
 		database.clear(guild)
 		database.add('channel', guild, channel.id)
