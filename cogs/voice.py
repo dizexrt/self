@@ -13,6 +13,7 @@ class Music(commands.Cog):
 		voice = Voice(client)
 		await voice.join(ctx)
 
+
 def setup(client):
 	client.add_cog(Music(client))
 

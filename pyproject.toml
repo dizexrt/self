@@ -15,6 +15,7 @@ gTTS = "^2.2.3"
 youtube_dl = "^2021.6.6"
 requests = "^2.26.0"
 consultor = "^0.2.0"
+component = "^0.0.1"
 
 [tool.poetry.dev-dependencies]
 

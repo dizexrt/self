@@ -14,19 +14,19 @@ class Voice:
 		bot = alert.bot
 
 		if not log.user:
-			return await user.empty(ctx)
+			return await user.empty()
 		
 		if log.user and not log.bot:
 			await ctx.author.voice.channel.connect()
-			await bot.join(ctx, ctx.voice_client.channel)
+			await bot.join(ctx.voice_client.channel)
 		
 		if log.bot:
 		
 			if not log.together:
-				return await user.not_together(ctx, ctx.bot.user)
+				return await user.not_together(ctx.bot.user)
 			
 			if log.together:
-				return await user.now_together(ctx, ctx.bot.user, ctx.voice_client.channel)
+				return await user.now_together(ctx.bot.user, ctx.voice_client.channel)
 	
 	async def play(self, message):
 		ctx = await self.client.get_context(message)

@@ -108,6 +108,14 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "component"
+version = "0.0.1"
+description = "A python library that makes is easy to consume bower components with python."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "consultor"
 version = "0.2.0"
 description = "Consultor te ayuda a explorar las diferentes carreras y cursos que las universidades ofrecen"
@@ -388,7 +396,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "42c8e95f4bf93653b4102bf7d5629ec600abe67cbc0015b47b5c6faf66de68b8"
+content-hash = "4ec067eabc1f5386e7f8a72603de1dc036f16b881727e926bc72ebb632738a8d"
 
 [metadata.files]
 aiohttp = [
@@ -513,6 +521,9 @@ click = [
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
+]
+component = [
+    {file = "component-0.0.1.zip", hash = "sha256:7e00914ecebd1fa8e5454d8dc6dd4368969d96d11c3a655490d27ecfb1461568"},
 ]
 consultor = [
     {file = "consultor-0.2.0-py2.py3-none-any.whl", hash = "sha256:18dd8bc503660c27679a6e13c6a1d14426c8e1e3ebda1f7d287440916c2a8891"},
