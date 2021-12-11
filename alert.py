@@ -65,6 +65,9 @@ class UserAlert:
 	
 	async def leave(self):
 		await self.send(f"{self.user.name} has left from voice channel")
+	
+	async def disconnect(self, user):
+		await self.send(f"{self.user.name} disconnected {user.name} from voice channel")
 
 	async def now_together(self, user, channel):
 		await self.send(f"{user.name} is already in voice channel {channel.mention} with you")

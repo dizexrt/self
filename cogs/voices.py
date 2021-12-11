@@ -70,6 +70,15 @@ class VoiceAction(commands.Cog):
 	)
 	async def _stop(self, ctx:SlashContext):
 		await voice.stop(ctx)
+	
+	#stop sound
+	@cog_ext.cog_slash(
+		name = 'disconnect',
+		description = 'disconnect bot from voice',
+		guild_ids = guild_ids,
+	)
+	async def _disconnect(self, ctx:SlashContext):
+		await voice.disconnect(ctx)
 
 def setup(client):
 	client.add_cog(VoiceAction(client))
