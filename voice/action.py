@@ -36,20 +36,20 @@ class Voice:
 		bot = alert.bot
 
 		if not log.user:
-			return await user.must_join(ctx)
+			return await user.must_join()
 		
 		if log.user and not log.bot:
 			await ctx.author.voice.channel.connect()
-			await bot.join(ctx, ctx.voice_client.channel)
-			return await self.playr.put(message.content, True)
+			await bot.join(ctx.voice_client.channel)
+			return await self.player.put(message, True)
 		
 		if log.bot:
 		
 			if not log.together:
-				return await user.mustbe_together(ctx, ctx.bot.user)
+				return await user.mustbe_together(ctx.bot.user)
 			
 			if log.together:
-				return await self.player.put(message.content, False)
+				return await self.player.put(message, False)
 				
 class VoiceState:
 

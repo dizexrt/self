@@ -1,9 +1,8 @@
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_choice, create_option
-from main import client
-
-guilds = [guild.id for guild in client.guilds]
+from main import guild_ids, voice
+from alert import Alert
 
 class Music(commands.Cog):
 
@@ -13,7 +12,7 @@ class Music(commands.Cog):
 	@cog_ext.cog_slash(
 		name = 'setup',
 		description = 'create or delete music channel',
-		guild_ids = guilds,
+		guild_ids = guild_ids,
 		options = [
 			create_option(
 				name = 'option',
@@ -27,20 +26,38 @@ class Music(commands.Cog):
 			)
 		]
 	)
-	async def _setup(ctx:SlashContext, option:str):
+	async def _setup(self, ctx:SlashContext, option:str):
 		
 		log = ctx.author.guild_permissions
+		alert = Alert.music(ctx)
+
 		
 		if log.administrator or log.manage_channels:
-			channel = MusicPlayer.find(ctx.guild)
+			channel = voice.player.find(ctx.guild)
 
 			if channel is None:
-				channel = await MusicPlayer.setup(ctx.guild, ctx.bot.user.name)
-				return await MusicPlayer.alert.channel_created(ctx)
-			
-			return await MusicPlayer.alert.channel_exist(ctx)
+
+				if option == 'create':
+					channel = await voice.player.setup(ctx.guild)
+					return await alert.player.setup(channel)
+				
+				if option == 'delete':
+					return await alert.player.not_exist()
+				
+			if channel is not None:
+				
+				if option == 'create':
+					return await alert.player.exist(channel)
+				
+				if option == 'delete':
+					await voice.player.unsetup(ctx.guild)
+					try:
+						await alert.player.unsetup()
+					except:pass
+					return 
 		
-		return await MusicPlayer.alert.require_permission(ctx)
+		
+		return await alert.user.require_permission('administrator or manage channels')
 
 
 def setup(client):

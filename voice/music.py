@@ -6,6 +6,8 @@ from async_timeout import timeout
 from functools import partial
 from discord.ext import commands
 from database import Database as database
+from voice.player import Player
+from alert import Alert
 
 youtube_dl.utils.bug_reports_message = lambda: ''
 
@@ -75,139 +77,11 @@ class YoutubeInfo:
 		t = data['duration']
 		self.duration = f"{int(t/3600)}h:{int(t%3600/60)}m:{int(t%3600%60)}s"
 
-class Player:
-	def __init__(self, message:discord.Message):
-		self.message = message
-		self.guild = message.channel.guild
-		self.source = None
-	
-	@classmethod
-	async def pull(cls, guild:discord.Guild):
-		channel = guild.get_channel(database.pull('channel', guild))
-		_id = database.pull('player', guild)
-		message =  await channel.fetch_message(_id)
-		return cls(message)
-	
-	@classmethod
-	def default(cls, guild:discord.Guild):
-		embed = discord.Embed(
-			title = "Music player",
-			description = "```\nไม่มีเพลงที่กำลังเล่นอยู่ในขณะนี้\n```"
-		)
-		embed.set_thumbnail(url = guild.icon_url)
-		embed.set_footer(text = f"server : {guild.name}")
-		return embed
-
-	async def update(self, source:YoutubeInfo, loop:str):
-		self.source = source
-		embed = discord.Embed(title = "Now Playing")
-		embed.add_field(name = "Title", value = f"```\n{source.title}\n```", inline = False)
-		embed.add_field(name = "Channel", value = f"```\n{source.channel}\n```", inline = False)
-		embed.add_field(name = "Duration", value = f"```\n{source.duration}\n```", inline = False)
-		embed.set_footer(text = f"requested by | {source.author}")
-		embed.set_image(url = source.thumbnail)
-		await self.message.edit(embed = embed, components = ComponentPlayer.update(loop, source.url))
-	
-	async def update_loop(self, loop:str):
-		await self.message.edit(components = ComponentPlayer.update(loop, self.source.url))
-	
-	async def clear(self):
-		await self.message.edit(embed = self.default(self.guild), components = ComponentPlayer.turn_off())
-
-class Queue:
-	def __init__(self, message:discord.Message):
-		self.message = message
-		self.guild = message.channel.guild
-		self._q = []
-		self._page = []
-		self._current = 0
-	
-	@classmethod
-	def default(cls, guild:discord.Guild):
-		embed = discord.Embed()
-		embed.title = "Page : 1"
-		embed.description = "```\nไม่มีเพลงอยู่ในคิวในขณะนี้\n```"
-		return embed
-	
-	@classmethod
-	async def pull(cls, guild:discord.Guild):
-		channel = guild.get_channel(database.pull('channel', guild))
-		_id = database.pull('queue', guild)
-		message = await channel.fetch_message(_id)
-		return cls(message)
-
-	async def _update(self):
-		await self.message.edit(embed = self._page[self._current], components = ComponentQueue.page(self._current+1, len(self._page)))
-
-	async def update(self, source:YoutubeInfo):
-		self._q.append(source)
-		await self._update_page()
-
-	async def pop(self):
-		if len(self._q) > 0:
-			self._q.pop(0)
-			await self._update_page()
-
-	async def clear(self):
-		self._q = []
-		self._current = 0
-		await self.message.edit(embed = self.default(self.guild), components = ComponentQueue.turn_off())
-
-	async def _update_page(self):
-		page = int(len(self._q)/10)
-		left = int(len(self._q)%10)
-		self._page = []
-
-		if len(self._q) == 0:
-			self._page = [self.default(self.guild)]
-			return await self._update()
-
-		if page > 0:
-			for p in range(page):
-				embed = discord.Embed()
-				embed.title = f"Page : {p+1}"
-
-				q = "```\n"
-				for i in range(10):
-					music = self._q[p*10+i]
-					q += f"{i+1}. {music.title}\n"
-				q += "```"
-
-				embed.description = q
-
-				self._page.append(embed)
-		
-		embed = discord.Embed()
-		embed.title = f"Page : {page+1}"
-
-		q = "```\n"
-		for i in range(left):
-			music = self._q[page*10+i]
-			q += f"{i+1}. {music.title}\n"
-		q += "```"
-
-		embed.description = q
-		self._page.append(embed)
-
-		await self._update()
-	
-	async def next_page(self):
-		self._current +=1
-		if self._current >= len(self._page):
-			self._current = 0
-
-		await self._update()
-
-	async def previous_page(self):
-		self._current -=1
-		if self._current < 0:
-			self._current = len(self._page)-1
-
-		await self._update()
 
 class MusicPlayer:
 
 	def __init__(self, ctx):
+		self.alert = Alert.music(ctx)
 		self.client = ctx.bot
 		self._guild = ctx.guild
 		self.channel = ctx.channel
@@ -249,7 +123,7 @@ class MusicPlayer:
 				try:
 					source = await YTDLSource.regather_stream(qsource, loop=self.client.loop)
 				except:
-					await self._channel.send("ล้มเหลวในการเล่นเพลง", delete_after = 3)
+					await self.alert.player.error()
 					continue
 					
 			source.volume = 5
@@ -266,7 +140,7 @@ class MusicPlayer:
 			try:
 				self._guild.voice_client.play(source, after=lambda _: self.client.loop.call_soon_threadsafe(self.next_event.set))
 			except:
-				await self.channel.send("ล้มเหลวในการดาวโหลดเพลง")
+				await self.alert.player.error()
 
 			if not self.loop:
 				await self.player.update(source.info, loop = loop)
@@ -290,7 +164,7 @@ class MusicPlayer:
 		await self._guild.voice_client.disconnect()
 		await self.player.clear()
 		await self.queue_list.clear()
-		return
+		return await self.alert.player.clear()
 
 ############
 class SongAPI:
@@ -315,13 +189,10 @@ class SongAPI:
 	
 	async def cleanup(self):
 		for guild in self.client.guilds:
-			if self.search(guild) is not None:
-				queue = await Queue.pull(guild)
-				player = await Player.pull(guild)
-				await queue.clear()
-				await player.clear()
+			if self.find(guild) is not None:
+				await Player.cleanup(guild)
 			
-	def search(self, guild:discord.Guild):
+	def find(self, guild:discord.Guild):
 		channel_id = database.pull('channel', guild)
 		if channel_id is None: return None
 
@@ -329,20 +200,11 @@ class SongAPI:
 		return channel
 
 	async def setup(self, guild:discord.Guild):
-		channel = await guild.create_text_channel(name = f"ห้องของ {self.client.user.name}")
-		queue = await channel.send(embed = Queue.default(guild), components = ComponentQueue.turn_off())
-		player = await channel.send(embed = Player.default(guild), components = ComponentPlayer.turn_off())
-
-		database.clear(guild)
-		database.add('channel', guild, channel.id)
-		database.add('player', guild, player.id)
-		database.add('queue', guild, queue.id)
+		channel = await Player.setup(guild, self.client.user.name)
 		return channel
 	
-	async def delete_setup(self, guild:discord.Guild):
-		channel = guild.get_channel(database.pull('channel', guild))
-		await channel.delete()
-		database.clear(guild)
+	async def unsetup(self, guild:discord.Guild):
+		await Player.unsetup(guild)
 
 	async def put(self, message:discord.Message, first:bool):
 		ctx = await self.client.get_context(message)
@@ -355,10 +217,9 @@ class SongAPI:
 				pass
 			
 			_player = self.get_player(ctx)
-			player = await Player.pull(guild)
-			queue = await Queue.pull(guild)
-			_player.player = player
-			_player.queue_list = queue
+			p = await Player.pull(guild)
+			_player.queue_list = p.queue
+			_player.player = p.player
 			self.update(guild, _player)
 		
 		_player = self.get_player(ctx)
@@ -368,7 +229,7 @@ class SongAPI:
 			await _player.queue.put(_)
 			await _player.queue_list.update(_)
 	
-	def check(ctx):
+	def check(self, ctx):
 		if ctx.author.voice is not None and ctx.voice_client is not None:
 			if ctx.author.voice.channel == ctx.voice_client.channel:return True
 		
@@ -376,22 +237,28 @@ class SongAPI:
 	
 	async def pause(self, ctx):
 		vc = ctx.voice_client
+		alert = Alert.music(ctx)
+
 		if self.check(ctx):
 			vc.pause()
-			return
+			return await alert.player.pause()
 		
-		return await ctx.send("คุณต้องเข้าช่องเสียงเดียวกับสายไหมก่อนนะ😊")
+		return await alert.user.mustbe_together(ctx.bot.user)
 	
 	async def play(self, ctx):
 		vc = ctx.voice_client
+		alert = Alert.music(ctx)
+
 		if self.check(ctx):
 			vc.resume()
-			return
+			return await alert.player.play()
 		
-		return await ctx.send("คุณต้องเข้าช่องเสียงเดียวกับสายไหมก่อนนะ😊")
+		return await alert.user.mustbe_together(ctx.bot.user)
 		
 	async def skip(self, ctx):
 		vc = ctx.voice_client
+		alert = Alert.music(ctx)
+
 		if self.check(ctx):
 			if vc.is_paused():
 				pass
@@ -399,50 +266,54 @@ class SongAPI:
 				return
 			
 			vc.stop()
-			return
+			return await alert.player.skip()
 		
-		return await ctx.send("คุณต้องเข้าช่องเสียงเดียวกับสายไหมก่อนนะ😊")
+		return await alert.user.mustbe_together(ctx.bot.user)
 	
 	async def leave(self, ctx):
 		vc = ctx.voice_client
+		alert = Alert.music(ctx)
+
 		if self.check(ctx):
 			del self.players[ctx.channel.guild.id]
-			return await vc.disconnect()
+			await vc.disconnect()
+			return await alert.player.disconnect()
 
-		return await ctx.send("คุณต้องเข้าช่องเสียงเดียวกับสายไหมก่อนนะ😊")
+		return await alert.user.mustbe_together(ctx.bot.user)
 	
 	async def next_q(self, ctx):
 		_player = self.get_player(ctx)
-		await _player.queue_list.next_page()
+		await _player.queue_list.next()
 	
 	async def prev_q(self, ctx):
 		_player = self.get_player(ctx)
-		await _player.queue_list.previous_page()
+		await _player.queue_list.previous()
 
 	async def loop(self, ctx, option:str):
 		_player = self.get_player(ctx)
+		alert = Alert.music(ctx)
 
 		if option == 'one':
 			if _player.loop == True:
 				_player.loop = False
 				await _player.player.update_loop('off')
-				await ctx.channel.send("ปิดการเล่นซ้ำเพลงล่าสุดแล้ว")
+				await alert.player.loop_off()
 			else:
 				_player.loop = True
 				_player.loop_all = False
 				await _player.player.update_loop('one')
-				await ctx.channel.send("เปิดการเล่นซ้ำเพลงล่าสุดแล้ว")
+				await alert.player.loop_on()
 			return
 		
 		if option == 'all':
 			if _player.loop_all == True:
 				_player.loop_all = False
 				await _player.player.update_loop('off')
-				await ctx.channel.send("ปิดการเล่นซ้ำเพลงทั้งหมดแล้ว")
+				await alert.player.looop_all_off()
 			else:
 				_player.loop = False
 				_player.loop_all = True
 				await _player.player.update_loop('all')
-				await ctx.channel.send("เปิดการเล่นซ้ำเพลงทั้งหมดแล้ว")
+				await alert.player.loop_all_on()
 			return
 		

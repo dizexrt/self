@@ -1,5 +1,6 @@
 from discord.ext import commands
 from main import voice
+from discord_slash import ComponentContext
 
 class Event(commands.Cog):
 
@@ -24,6 +25,38 @@ class Event(commands.Cog):
 	@commands.Cog.listener()
 	async def on_ready(self):
 		print(f"{self.client.user.name} is ready!")
+		await voice.player.cleanup()
+	
+	@commands.Cog.listener()
+	async def on_component(self, ctx:ComponentContext):
+
+		log = ctx.custom_id
+
+		if log == 'play':
+			await voice.player.play(ctx)
+		
+		elif log == 'pause':
+			await voice.player.pause(ctx)
+
+		elif log == 'loop':
+			await voice.player.loop(ctx, 'one')
+		
+		elif log == 'loop_all':
+			await voice.player.loop(ctx, 'all')
+
+		elif log == 'leave':
+			await voice.player.leave(ctx)
+		
+		elif log == 'skip':
+			await voice.player.skip(ctx)
+
+		elif log == 'next':
+			await voice.player.next_q(ctx)
+
+		elif log == 'previous':
+			await voice.player.prev_q(ctx)
+		
+		await ctx.edit_origin(content = '')
 
 def setup(client):
 	client.add_cog(Event(client))
