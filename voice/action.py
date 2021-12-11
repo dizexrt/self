@@ -8,29 +8,6 @@ class Voice:
 	def __init__(self, client):
 		self.client = client
 		self.player = SongAPI(client)
-
-	#join with slash
-	async def slash_join(self, ctx):
-
-		log = VoiceState(ctx)
-		alert = Alert.voice(ctx)
-		user = alert.user
-		bot = alert.bot
-
-		if not log.user:
-			return await user.empty()
-
-		if log.user and not log.bot:
-			await ctx.author.voice.channel.connect()
-			await bot.join(ctx.voice_client.channel)
-
-		if log.bot:
-
-			if not log.together:
-				return await user.not_together(ctx.bot.user)
-
-			if log.together:
-				return await user.now_together(ctx.bot.user, ctx.voice_client.channel)
 	
 	#play music from song.py
 	async def play(self, message):
@@ -38,22 +15,27 @@ class Voice:
 		ctx = await self.client.get_context(message)
 		log = VoiceState(ctx)
 		alert = Alert.voice(ctx)
-		user = alert.user
-		bot = alert.bot
 
 		if not log.user:
-			return await user.must_join()
+			return await alert.user.must_join()
 
 		if log.user and not log.bot:
+
 			await ctx.author.voice.channel.connect()
-			await bot.join(ctx.voice_client.channel)
+			await alert.bot.join(ctx.voice_client.channel)
 			return await self.player.put(message, True)
 		
 		#bot not free
 		if log.bot:
 
 			if not log.together:
-				return await user.mustbe_together(ctx.bot.user)
+
+				if not log.bot_alone:
+					return await alert.user.mustbe_together(ctx.bot.user)
+				
+				if log.bot_alone:
+					await ctx.voice_client.move_to(ctx.author.voice.channel)
+					return await self.player.put(message, False)
 
 			if log.together:
 				return await self.player.put(message, False)
@@ -62,32 +44,33 @@ class Voice:
 	async def play_source(self, ctx, name):
 		log = VoiceState(ctx)
 		alert = Alert.voice(ctx)
-		user = alert.user
-		bot = alert.bot
 
 		if not log.user:
-			return await user.must_join()
+			return await alert.user.must_join()
 
 		if log.user and not log.bot:
 			await ctx.author.voice.channel.connect()
-			await bot.join(ctx.voice_client.channel)
+			await alert.bot.join(ctx.voice_client.channel)
 			source = Source.pull(name)
 			ctx.voice_client.play(source)
-			return await bot.play()
+			return await alert.bot.play(ctx.voice_client.channel)
 
 		if log.bot:
-			
-			if not log.together:
-				return await user.mustbe_together(ctx.bot.user)
+
+			if not log.together and not log.bot_alone:
+				return await alert.user.mustbe_together(ctx.bot.user)
+
+			if not log.together and log.bot_alone:
+				await ctx.voice_client.move_to(ctx.author.voice.channel)
 
 			if log.together:
 				source = Source.pull(name)
 				try:
 					ctx.voice_client.play(source)
 				except:
-					return await bot.busy()
+					return await alert.bot.busy()
 
-				return await bot.play()
+				return await alert.bot.play(ctx.voice_client.channel)
 
 	#stop playing sound slash
 	async def stop(self, ctx):
@@ -144,6 +127,7 @@ class VoiceState:
 		self.user = self._user_log()
 		self.bot = self._bot_log()
 		self.together = self._together()
+		self.bot_alone = self._bot_alone()
 
 	def _user_log(self):
 		if self.ctx.author.voice is None: return False
@@ -152,6 +136,12 @@ class VoiceState:
 	def _bot_log(self):
 		if self.ctx.voice_client is None: return False
 		return True
+	
+	def _bot_alone(self):
+		if self.ctx.voice_client is not None:
+			if len(self.ctx.voice_client.channel.members) == 1:
+				return True
+		return False
 	
 	def _together(self):
 		if self.user and self.bot:

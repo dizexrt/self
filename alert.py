@@ -100,6 +100,9 @@ class BotAlert:
 	
 	async def empty(self):
 		await self.send(f"⭕ {self.user.name} ยังไม่ได้อยู่ในช่องเสียงในขณะนี้")
+
+	async def play(self, channel):
+		await self.send(f"⭕ {self.user.name} ทำการเล่นเสียงในห้องเสียง {channel.mention} แล้ว")
 	
 	async def stop(self):
 		await self.send(f"⭕ {self.user.name} หยุดการเล่นเสียงแล้ว")

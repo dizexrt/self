@@ -26,8 +26,8 @@ class VoiceAction(commands.Cog):
 			)
 		]
 	)
-	async def _say(self, ctx:SlashContext, message:str):
-		tts = gTTS(message, lang = 'th')
+	async def _say(self, ctx:SlashContext, text:str):
+		tts = gTTS(text, lang = 'th')
 		tts.save("voice/source/tts.mp3")
 		await voice.play_source(ctx, 'tts')
 	
