@@ -21,7 +21,7 @@ class Event(commands.Cog):
 		
 		if message.author.bot : return
 
-		self.client.process_commands(message)
+		await self.client.process_commands(message)
 	
 	@commands.Cog.listener()
 	async def on_ready(self):

@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_choice, create_option
-from main import guild_ids, voice
+from main import guild_ids, voice, name
 from alert import Alert
 
 class Music(commands.Cog):
@@ -11,17 +11,17 @@ class Music(commands.Cog):
 	
 	@cog_ext.cog_slash(
 		name = 'setup',
-		description = 'create or delete music channel',
+		description = f'เลือกการตั้งค่าให้กับห้องของ{name}',
 		guild_ids = guild_ids,
 		options = [
 			create_option(
 				name = 'option',
-				description = 'select option for setting up',
+				description = 'เลือกการตั้งค่า',
 				option_type = 3,
 				required = True,
 				choices = [
-					create_choice(value = 'create', name = '✅create'),
-					create_choice(value = 'delete', name = '❎delete')
+					create_choice(value = 'create', name = '✅สร้างห้อง'),
+					create_choice(value = 'delete', name = '❎ลบห้อง')
 				]
 			)
 		]
@@ -57,7 +57,7 @@ class Music(commands.Cog):
 					return 
 		
 		
-		return await alert.user.require_permission('administrator or manage channels')
+		return await alert.user.require_permission('แอดมิน หรือ การจัดการแชนแนล')
 
 
 def setup(client):

@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
-from main import guild_ids, voice, source
+from main import guild_ids, voice, source, name
 from gtts import gTTS
 import random
 from alert import Alert
@@ -15,12 +15,12 @@ class VoiceAction(commands.Cog):
 	#say message from sender
 	@cog_ext.cog_slash(
 		name = 'say',
-		description = 'say message that you send',
+		description = f'ให้ {name} พูดข้อความที่คุณส่งมา',
 		guild_ids = guild_ids,
 		options = [
 			create_option(
-				name = 'message',
-				description = 'send message that you want to listen',
+				name = 'text',
+				description = 'ป้อนข้อความ',
 				option_type = 3,
 				required = True
 			)
@@ -34,7 +34,7 @@ class VoiceAction(commands.Cog):
 	#random sound
 	@cog_ext.cog_slash(
 		name = 'random',
-		description = 'random sound to speak',
+		description = f'ให้ {name} สุ่มเล่นเสียง',
 		guild_ids = guild_ids,
 	)
 	async def _random(self, ctx:SlashContext):
@@ -43,12 +43,12 @@ class VoiceAction(commands.Cog):
 	#fix sound to play
 	@cog_ext.cog_slash(
 		name = 'fix',
-		description = 'play sound from number',
+		description = f'ให้ {name} เล่นเสียงตามหมายเลขที่กำหนด',
 		guild_ids = guild_ids,
 		options = [
 			create_option(
 				name = 'number',
-				description = 'input number that you want to listen',
+				description = f'ใส่หมายเลขที่กต้องการ 1 - {len(source)}',
 				option_type = 4,
 				required = True
 			)
@@ -65,11 +65,20 @@ class VoiceAction(commands.Cog):
 	#stop sound
 	@cog_ext.cog_slash(
 		name = 'stop',
-		description = 'stop bot from playing sound',
+		description = f'หยุดการใช้เสียงของ {name}',
 		guild_ids = guild_ids,
 	)
 	async def _stop(self, ctx:SlashContext):
 		await voice.stop(ctx)
+
+	#stop sound
+	@cog_ext.cog_slash(
+		name = 'disconnect',
+		description = f'ให้ {name} ออกจากช่องเสียง',
+		guild_ids = guild_ids,
+	)
+	async def _disconnect(self, ctx:SlashContext):
+		await voice.disconnect(ctx)
 
 def setup(client):
 	client.add_cog(VoiceAction(client))
