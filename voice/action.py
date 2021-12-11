@@ -72,7 +72,8 @@ class Voice:
 			await ctx.author.voice.channel.connect()
 			await bot.join(ctx.voice_client.channel)
 			source = Source.pull(name)
-			return ctx.voice_client.play(source)
+			ctx.voice_client.play(source)
+			return await bot.play()
 
 		if log.bot:
 			
@@ -84,7 +85,9 @@ class Voice:
 				try:
 					ctx.voice_client.play(source)
 				except:
-					await bot.busy()
+					return await bot.busy()
+
+				return await bot.play()
 
 	#stop playing sound slash
 	async def stop(self, ctx):
@@ -94,6 +97,9 @@ class Voice:
 
 		if not log.user:
 			return await alert.user.must_join()
+		
+		if not log.bot:
+			return await alert.bot.empty()
 
 		if log.bot and not log.together:
 			return await alert.user.mustbe_together(ctx.bot.user)
@@ -118,7 +124,7 @@ class Voice:
 			return await alert.user.mustbe_together(ctx.bot.user)
 
 		if log.bot and log.together:
-			ctx.voice_client.disconnect()
+			await ctx.voice_client.disconnect()
 			return await alert.user.disconnect(ctx.bot.user)			
 	
 #class for source	

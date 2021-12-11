@@ -106,6 +106,9 @@ class BotAlert:
 
 	async def busy(self):
 		await self.send(f"{self.user.name} is busy now")
+	
+	async def play(self):
+		await self.send(f"{self.user.name} played the sound")
 		
 #music player alert setting
 class Music:
