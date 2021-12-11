@@ -117,6 +117,9 @@ class MusicPlayer:
 
 			except asyncio.TimeoutError:
 				return await self.destroy()
+			
+			except :
+				return await self.destroy()
 
 			#if can play source
 			if not isinstance(qsource, YTDLSource):
@@ -161,7 +164,9 @@ class MusicPlayer:
 				await self.player.clear()
 
 	async def destroy(self):
-		await self._guild.voice_client.disconnect()
+		try:
+			await self._guild.voice_client.disconnect()
+		except:pass
 		await self.player.clear()
 		await self.queue_list.clear()
 		return await self.alert.player.clear()

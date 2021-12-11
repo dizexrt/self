@@ -32,6 +32,7 @@ class Alert:
 		voice.bot = BotAlert(ctx.bot.user, ctx)
 		return voice
 	
+	#create class for alert something
 	@classmethod
 	def create(cls, ctx):
 		alert = cls(ctx)
@@ -96,7 +97,13 @@ class BotAlert:
 	
 	async def empy(self):
 		await self.send(f"{self.user.name} is not in voice channel now")
+	
+	async def stop(self):
+		await self.send(f"{self.user.name} has stopped playing the sound")
 
+	async def busy(self):
+		await self.send(f"{self.user.name} is busy now")
+		
 #music player alert setting
 class Music:
 
@@ -149,4 +156,7 @@ class Music:
 	
 	async def not_exist(self):
 		await self.send(f"{self.bot.name} is not have setup channel now")
+
+	async def not_found(self):
+		await self.send(f"{self.bot.name} cannot found that sound")
 

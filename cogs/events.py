@@ -2,6 +2,7 @@ from discord.ext import commands
 from main import voice
 from discord_slash import ComponentContext
 
+#command create
 class Event(commands.Cog):
 
 	def __init__(self, client):
@@ -58,6 +59,7 @@ class Event(commands.Cog):
 		
 		await ctx.edit_origin(content = '')
 
+#setup command
 def setup(client):
 	client.add_cog(Event(client))
 

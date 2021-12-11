@@ -1,8 +1,10 @@
 from replit import db
 import discord
 
+#class for get data from data base easier
 class Database:
 	
+	#pull data
 	@staticmethod
 	def pull(option:str, guild:discord.Guild):
 		try:
@@ -12,6 +14,7 @@ class Database:
 
 		return value
 	
+	#add data if not exist
 	@staticmethod
 	def add(option:str, guild:discord.Guild, value):
 		try:
@@ -22,6 +25,7 @@ class Database:
 
 		return False
 
+	#clear data only
 	@staticmethod
 	def clear(guild:discord.Guild):
 		db[str(guild.id)] = {}
