@@ -67,7 +67,7 @@ class UserAlert:
 		await self.send(f"❌ {self.user.name} ได้ออกจากช่องเสียงแล้ว")
 	
 	async def disconnect(self, user):
-		await self.channel(f"⭕ {self.user.name} ได้ตัดการเชื่อมต่อ {user.name} จากช่องเสียงแล้ว")
+		await self.send(f"⭕ {self.user.name} ได้ตัดการเชื่อมต่อ {user.name} จากช่องเสียงแล้ว")
 
 	async def now_together(self, user, channel):
 		await self.send(f"🍖 {user.name} ได้อยู่ร่วมช่องเสียง {channel.mention} กับคูณอยู่แล้ว")

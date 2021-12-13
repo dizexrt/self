@@ -29,7 +29,7 @@ client = commands.Bot(Bot.prefix, intents = Bot.intents())
 slash = SlashCommand(client, sync_commands = True)
 voice = Voice(client)
 guild_ids = [guild.id for guild in client.guilds]
-name = 'สายไหม'
+name = 'Saii Maih'
 
 #upload commands
 for filename in os.listdir('cogs'):

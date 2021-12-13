@@ -129,7 +129,7 @@ class MusicPlayer:
 					await self.alert.player.error()
 					continue
 					
-			source.volume = 5
+			source.volume = 1
 
 			if self._guild.voice_client is None:
 				await self.player.clear()

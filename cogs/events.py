@@ -1,8 +1,6 @@
 from discord.ext import commands
 from main import voice
 from discord_slash import ComponentContext
-import asyncio
-from async_timeout import timeout
 
 #command create
 class Event(commands.Cog):
@@ -29,38 +27,6 @@ class Event(commands.Cog):
 	async def on_ready(self):
 		print(f"{self.client.user.name} is ready!")
 		await voice.player.cleanup()
-
-	@commands.Cog.listener()
-	async def on_voice_state_update(self, member, before, after):
-    
-
-		voice_client = member.guild.voice_client
-
-		if not member.bot:
-
-			if voice_client is None: return
-			
-			if before.channel != voice_client.channel:return
-
-			try:
-				async with timeout(150):
-					len(voice_client.channel.members) > 1
-					
-			except asyncio.TimeoutError:
-				return await voice_client.disconnect()
-					
-		
-		if member.bot:
-
-			if after.channel is not None:
-				try:
-					async with timeout(150):
-
-						len(voice_client.channel.members) > 1 and voice_client.is_playing()
-						
-				except asyncio.TimeoutError:
-					return await voice_client.disconnect()
-
 	
 	@commands.Cog.listener()
 	async def on_component(self, ctx:ComponentContext):

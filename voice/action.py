@@ -1,6 +1,7 @@
 from alert import Alert
 from voice.song import SongAPI
 import discord
+from async_timeout import timeout
 
 #Main class for create voice action
 class Voice:
@@ -50,10 +51,9 @@ class Voice:
 
 		if log.user and not log.bot:
 			await ctx.author.voice.channel.connect()
-			await alert.bot.join(ctx.voice_client.channel)
 			source = Source.pull(name)
 			ctx.voice_client.play(source)
-			return await alert.bot.play(ctx.voice_client.channel)
+			await alert.bot.play(ctx.voice_client.channel)
 
 		if log.bot:
 
@@ -62,15 +62,24 @@ class Voice:
 
 			if not log.together and log.bot_alone:
 				await ctx.voice_client.move_to(ctx.author.voice.channel)
+				source = Source.pull(name)
+				try:
+					async with timeout(60):
+						ctx.voice_client.play(source)
+				except:
+					return await alert.bot.busy()
+				else:
+					return await alert.bot.play(ctx.voice_client.channel)
 
 			if log.together:
 				source = Source.pull(name)
 				try:
-					ctx.voice_client.play(source)
+					async with timeout(60):
+						ctx.voice_client.play(source)
 				except:
 					return await alert.bot.busy()
-
-				return await alert.bot.play(ctx.voice_client.channel)
+				else:
+					return await alert.bot.play(ctx.voice_client.channel)
 
 	#stop playing sound slash
 	async def stop(self, ctx):
@@ -108,7 +117,8 @@ class Voice:
 
 		if log.bot and log.together:
 			await ctx.voice_client.disconnect()
-			return await alert.user.disconnect(ctx.bot.user)			
+			return await alert.user.disconnect(ctx.bot.user)
+
 	
 #class for source	
 class Source:
