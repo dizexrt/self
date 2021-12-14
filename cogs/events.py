@@ -37,7 +37,10 @@ class Event(commands.Cog):
 
 		if log == 'stop':
 			if await voice.stop_component(ctx):
-				return await ctx.edit_origin(content = '')
+				try:
+					await ctx.edit_origin(content = '')
+				except:pass
+				return
 
 		await ctx.edit_origin(content = '')
 		

@@ -45,7 +45,8 @@ class Alert:
 	@classmethod
 	def source(cls, ctx):
 		alert = cls(ctx)
-		alert.bot = BotAlert(ctx.author, ctx)
+		alert.bot = BotAlert(ctx.bot.user, ctx)
+		alert.user = UserAlert(ctx.author, ctx)
 		alert.source = Source(ctx)
 		return alert
 
@@ -118,6 +119,9 @@ class BotAlert:
 
 	async def busy(self):
 		return await self.send(f"⭕ {self.bot.name} ยังไม่ว่างในขณะนี้")
+
+	async def add(self, channel):
+		return await self.send(f"⭕ {self.bot.name} เพิ่มเพลงแล้วสามารถดูได้ที่ห้อง {channel.mention}")
 
 	async def move_and_wait(self, channel):
 		return await self.send(f"{self.bot.name} ได้ย้ายไปที่ห้อง {channel.mention} แล้ว แต่ ยังคงเล่นเสียงก่อนหน้าต่อไป")

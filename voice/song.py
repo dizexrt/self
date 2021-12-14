@@ -55,14 +55,26 @@ class YTDLSource(discord.PCMVolumeTransformer):
 			source = [(YoutubeInfo(data, message.author))]
 
 		return source
+	
+	@classmethod
+	async def create_source_query(cls, query:str, author, *, loop):
+		loop = loop or asyncio.get_event_loop()
+
+		to_run = partial(ytdl.extract_info, url = query, download = False)
+		data = await loop.run_in_executor(None, to_run)
+
+		if 'entries' in data:
+			source = [YoutubeInfo(_, author) for _ in data['entries']]
+		else:
+			source = [(YoutubeInfo(data, author))]
+
+		return source
 
 	@classmethod
 	async def regather_stream(cls, source, *, loop):
 		loop = loop or asyncio.get_event_loop()
 		requester = source.author
-
 		to_run = partial(ytdl.extract_info, url=source.url, download=False)
-		
 		data = await loop.run_in_executor(None, to_run)
 
 		return cls(discord.FFmpegPCMAudio(data['url'], **ffmpeg_options), data=data, requester=requester)
@@ -267,17 +279,34 @@ class SongAPI:
 		ctx = await self.client.get_context(message)
 		guild = message.channel.guild
 		
-			
 		_player = self.get_player(ctx)
-		p = await Player.pull(guild)
 
 		if _player.player is None:
+			p = await Player.pull(guild)
 			_player.queue_list = p.queue
 			_player.player = p.player
 			self.update(guild, _player)
 			_player = self.get_player(ctx)
 
 		source = await YTDLSource.create_source(message, loop=self.client.loop)
+
+		for _ in source:
+			await _player.queue.put(_)
+			await _player.queue_list.update(_)
+	
+	async def put_query(self, ctx, query:str):
+		guild = ctx.channel.guild
+		
+		_player = self.get_player(ctx)
+
+		if _player.player is None:
+			p = await Player.pull(guild)
+			_player.queue_list = p.queue
+			_player.player = p.player
+			self.update(guild, _player)
+			_player = self.get_player(ctx)
+
+		source = await YTDLSource.create_source_query(query, ctx.author, loop=self.client.loop)
 
 		for _ in source:
 			await _player.queue.put(_)

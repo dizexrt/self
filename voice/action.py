@@ -40,6 +40,37 @@ class Voice:
 			if log.together:
 				return await self.player.put(message)
 	
+	async def play_slash(self, ctx, query, channel):
+
+		log = VoiceState(ctx)
+		alert = Alert.voice(ctx)
+
+		if not log.user:
+			return await alert.user.must_join()
+
+		if log.user and not log.bot:
+
+			await ctx.author.voice.channel.connect()
+			await alert.bot.add(channel)
+			return await self.player.put_query(ctx, query)
+		
+		#bot not free
+		if log.bot:
+
+			if not log.together:
+
+				if not log.bot_alone:
+					return await alert.user.mustbe_together(ctx.bot.user)
+				
+				if log.bot_alone:
+					await ctx.voice_client.move_to(ctx.author.voice.channel)
+					await alert.bot.add(channel)
+					return await self.player.put_query(ctx, query)
+
+			if log.together:
+				await alert.bot.add(channel)
+				return await self.player.put_query(ctx, query)
+	
 	#play music from song.py
 	async def play_source(self, ctx, name):
 		log = VoiceState(ctx)
