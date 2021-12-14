@@ -43,7 +43,7 @@ class VoiceAction(commands.Cog):
 	#fix sound to play
 	@cog_ext.cog_slash(
 		name = 'fix',
-		description = 'play sound from number',
+		description = f'play sound from number 1 - {len(source)}',
 		guild_ids = guild_ids,
 		options = [
 			create_option(

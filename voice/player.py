@@ -1,7 +1,8 @@
-
 import discord
 from database import Database as database
 from component import button, ButtonGroup
+
+image = 'https://cdn.discordapp.com/attachments/918611726566580244/920204417960124447/Queue_2.png'
 
 class ComponentQueue:
 	
@@ -98,7 +99,7 @@ class MusicPlayer:
 	def default(guild:discord.Guild):
 		embed = discord.Embed(title = '▶ Music Player')
 		embed.add_field(name = 'No current song', value = "```\nYou can put keywords or url from youtube to start playing\n```", inline = False)
-		embed.set_image(url="https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png")
+		embed.set_image(url = image)
 		embed.set_footer(text = f"server : {guild.name}")
 		return embed
 
@@ -132,7 +133,7 @@ class MusicQueue:
 		page = "Page : 1"
 		queue = "```There is no song in queue now\n```"
 		embed.add_field(name = page, value = queue, inline = False)
-		embed.set_image(url = 'https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png')
+		embed.set_image(url = image)
 		return embed
 	
 	@classmethod
@@ -180,7 +181,7 @@ class MusicQueue:
 				queue += "```"
 
 				embed.add_field(name = page, value = queue, inline = False)
-				embed.set_image(url = 'https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png')
+				embed.set_image(url = image)
 
 				self._page.append(embed)
 		
@@ -194,7 +195,7 @@ class MusicQueue:
 		queue += "```"
 
 		embed.add_field(name = page, value = queue, inline = False)
-		embed.set_image(url = 'https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png')
+		embed.set_image(url = image)
 		self._page.append(embed)
 
 		await self._update()

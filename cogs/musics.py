@@ -58,6 +58,26 @@ class Music(commands.Cog):
 		
 		
 		return await alert.user.require_permission('administrator or manage channels')
+	
+	@cog_ext.cog_slash(
+		name = 'play',
+		description = 'Search song and play',
+		guild_ids = guild_ids,
+		options = [
+			create_option(
+				name = 'query',
+				description = 'Enter song url or keywords from Youtube',
+				option_type = 3,
+				required = True
+			)
+		]
+	)
+	async def _play(self, ctx:SlashContext, query:str):
+		channel = voice.player.find(ctx.channel.guild)
+		if channel is not None:
+			await voice.play_slash(ctx, query, channel)
+		else:
+			pass
 
 
 def setup(client):

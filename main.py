@@ -23,7 +23,7 @@ class Bot:
 		return intents
 
 #create randomsound()
-source = [f'{filename[:-4]}' for filename in os.listdir('voice/source') if filename.endswith('.mp3') and not filename == 'tts.mp3']
+source = [f'{filename}' for filename in os.listdir('voice/source') if not filename == 'tts.mp3']
 
 #client using
 client = commands.Bot(Bot.prefix, intents = Bot.intents())

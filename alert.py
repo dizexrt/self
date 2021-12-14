@@ -1,4 +1,5 @@
 import discord
+from component import button, ButtonGroup
 
 #embed creator fix
 def embed(alert:str):
@@ -182,6 +183,15 @@ class Source:
 		self.send = Sender(ctx).send
 		self.channel = Sender(ctx.channel).send
 		self.bot = ctx.bot.user
+		self.ctx = ctx
 
 	async def play(self, channel):
-		return await self.send(f"🔊 {self.bot.name} is now playing sound in {channel.mention} channel")
+		return await self.ctx.send(
+			content = 'play sound',
+			embed = embed(f"✅ {self.bot.name} has played sound in channel {channel.mention} now"),
+			components = [
+				ButtonGroup(
+					button(True, label = 'stop', id = 'stop', style = 'red')
+				)
+			]
+		)
