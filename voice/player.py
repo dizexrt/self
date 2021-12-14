@@ -96,17 +96,15 @@ class MusicPlayer:
 	
 	@staticmethod
 	def default(guild:discord.Guild):
-		embed = discord.Embed(
-			title = "Music player",
-			description = "```\nไม่มีเพลงที่กำลังเล่นอยู่ในขณะนี้\n```"
-		)
-		embed.set_thumbnail(url = guild.icon_url)
+		embed = discord.Embed(title = '▶ Music Player')
+		embed.add_field(name = 'No current song', value = "```\nYou can put keywords or url from youtube to start playing\n```", inline = False)
+		embed.set_image(url="https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png")
 		embed.set_footer(text = f"server : {guild.name}")
 		return embed
 
 	async def update(self, source, loop:str):
 		self.source = source
-		embed = discord.Embed(title = "Now Playing")
+		embed = discord.Embed(title = "▶ Now Playing")
 		embed.add_field(name = "Title", value = f"```\n{source.title}\n```", inline = False)
 		embed.add_field(name = "Channel", value = f"```\n{source.channel}\n```", inline = False)
 		embed.add_field(name = "Duration", value = f"```\n{source.duration}\n```", inline = False)
@@ -130,9 +128,11 @@ class MusicQueue:
 	
 	@staticmethod
 	def default(guild:discord.Guild):
-		embed = discord.Embed()
-		embed.title = "Page : 1"
-		embed.description = "```\nไม่มีเพลงอยู่ในคิวในขณะนี้\n```"
+		embed = discord.Embed(title  = "📋 Player Queue")
+		page = "Page : 1"
+		queue = "```There is no song in queue now\n```"
+		embed.add_field(name = page, value = queue, inline = False)
+		embed.set_image(url = 'https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png')
 		return embed
 	
 	@classmethod
@@ -160,7 +160,7 @@ class MusicQueue:
 		await self.message.edit(embed = self.default(self.guild), components = ComponentQueue.turn_off())
 
 	async def _update_page(self):
-		page = int(len(self._q)/10)
+		pages = int(len(self._q)/10)
 		left = int(len(self._q)%10)
 		self._page = []
 
@@ -168,31 +168,33 @@ class MusicQueue:
 			self._page = [self.default(self.guild)]
 			return await self._update()
 
-		if page > 0:
-			for p in range(page):
-				embed = discord.Embed()
-				embed.title = f"Page : {p+1}"
+		if pages > 0:
+			for p in range(pages):
+				embed = discord.Embed(title = "📋 Player Queue")
+				page = f"Page : {p+1}"
 
-				q = "```\n"
+				queue = "```\n"
 				for i in range(10):
 					music = self._q[p*10+i]
-					q += f"{i+1}. {music.title}\n"
-				q += "```"
+					queue += f"{i+1}. {music.title}\n"
+				queue += "```"
 
-				embed.description = q
+				embed.add_field(name = page, value = queue, inline = False)
+				embed.set_image(url = 'https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png')
 
 				self._page.append(embed)
 		
-		embed = discord.Embed()
-		embed.title = f"Page : {page+1}"
+		embed = discord.Embed(title = "📋 Player Queue")
+		page = f"Page : {pages + 1}"
 
-		q = "```\n"
+		queue = "```\n"
 		for i in range(left):
-			music = self._q[page*10+i]
-			q += f"{i+1}. {music.title}\n"
-		q += "```"
+			music = self._q[pages * 10 + i]
+			queue += f"{i + 1}. {music.title}\n"
+		queue += "```"
 
-		embed.description = q
+		embed.add_field(name = page, value = queue, inline = False)
+		embed.set_image(url = 'https://cdn.discordapp.com/attachments/918611726566580244/919557962954055691/a010136a1d27ddb3.png')
 		self._page.append(embed)
 
 		await self._update()

@@ -5,7 +5,7 @@ def embed(alert:str):
 	embed = discord.Embed()
 	embed.description = alert
 	embed.colour = discord.Colour.purple()
-	embed.set_author(name = "Noticefication")
+	embed.set_author(name = "📢 Noticefication")
 	return embed
 
 #short sender
@@ -15,7 +15,7 @@ class Sender:
 		self.ctx = ctx
 
 	async def send(self, alert:str):
-		await self.ctx.send(embed = embed(alert))
+		return await self.ctx.send(embed = embed(alert))
 
 #alert base
 class Alert:
@@ -31,12 +31,19 @@ class Alert:
 		voice.user = UserAlert(ctx.author, ctx)
 		voice.bot = BotAlert(ctx.bot.user, ctx)
 		return voice
+
+	@classmethod
+	def component(cls, ctx):
+		voice = cls(ctx)
+		voice.user = UserAlert(ctx.author, ctx)
+		voice.bot = BotAlert(ctx.bot.user, ctx.channel)
+		return voice
 	
 	#create class for alert something
 	@classmethod
-	def create(cls, ctx):
+	def source(cls, ctx):
 		alert = cls(ctx)
-		alert.user = UserAlert(ctx.author, ctx)
+		alert.source = Source(ctx)
 		alert.bot = BotAlert(ctx.bot.user, ctx)
 		return alert
 
@@ -58,31 +65,31 @@ class UserAlert:
 		self.send = self.sender.send
 
 	async def empty(self, call:bool = False):
-		await self.send(f"You are not in voice channel now")
+		return await self.send(f"✅ You are not in voice channel now")
 	
 	async def join(self, channel, call_self:bool):
-		await self.send(f"{self.user.name} has joined {channel.mention} channel")
+		return await self.send(f"✅ {self.user.name} has joined {channel.mention} channel")
 	
 	async def leave(self):
-		await self.send(f"{self.user.name} has left from voice channel")
+		return await self.send(f"🔌 {self.user.name} has left from voice channel")
 	
 	async def disconnect(self, user):
-		await self.send(f"{self.user.name} disconnected {user.name} from voice channel")
+		return await self.send(f"🔌 {self.user.name} disconnected {user.name} from voice channel")
 
 	async def now_together(self, user, channel):
-		await self.send(f"{user.name} is already in voice channel {channel.mention} with you")
+		return await self.send(f"👥 {user.name} is already in voice channel {channel.mention} with you")
 	
 	async def not_together(self, user):
-		await self.send(f"You are not in voice channel with {user.name} now")
+		return await self.send(f"👤 You are not in voice channel with {user.name} now")
 	
 	async def mustbe_together(self, user):
-		await self.send(f"You have to join voice channel with {user.name} first")
+		return await self.send(f"👥 You have to join voice channel with {user.name} first")
 
 	async def must_join(self):
-		await self.send("You have to join voice channel first")
+		return await self.send("🔊 You have to join voice channel first")
 
 	async def require_permission(self, name:str):
-		await self.send(f"You have to have {name} permissions first")
+		return await self.send(f"🔒 You have to have {name} permissions first")
 
 #bot alert setting
 class BotAlert:
@@ -93,22 +100,25 @@ class BotAlert:
 		self.send = self.sender.send
 	
 	async def leave(self):
-		await self.send(f"{self.user.name} has left from voice channel")
+		return await self.send(f"🔌 {self.user.name} has left from voice channel")
 	
 	async def join(self, channel):
-		await self.send(f"{self.user.name} has joined {channel.mention} channel")
+		return await self.send(f"✅ {self.user.name} has joined {channel.mention} channel")
 	
 	async def empy(self):
-		await self.send(f"{self.user.name} is not in voice channel now")
+		return await self.send(f"⭕ {self.user.name} is not in voice channel now")
 	
 	async def stop(self):
-		await self.send(f"{self.user.name} has stopped playing the sound")
+		return await self.send(f"⭕ {self.user.name} has stopped playing the sound")
+	
+	async def empty(self):
+		return await self.send(f"⭕ {self.user.name} is not joined voice channel now")
 
 	async def busy(self):
-		await self.send(f"{self.user.name} is busy now")
+		return await self.send(f"⭕ {self.user.name} is busy now")
 	
-	async def play(self):
-		await self.send(f"{self.user.name} played the sound")
+	async def play(self, channel):
+		return await self.send(f"🎙 {self.user.name} played the sound in channel {channel.mention}")
 		
 #music player alert setting
 class Music:
@@ -122,47 +132,56 @@ class Music:
 		self.send = self.sender.send
 	
 	async def error(self):
-		await self.send("There is some problem while processing the song")
+		return await self.send("👀 There is some problem while processing the song")
 
 	async def skip(self):
-		await self.channel(f"{self.user.name} has skipped the song")
+		return await self.channel(f"⏭ {self.user.name} has skipped the song")
 	
 	async def disconnect(self):
-		await self.channel(f"{self.user.name} has disconnected {self.bot.name} from voice channel")
+		return await self.channel(f"🔌 {self.user.name} has disconnected {self.bot.name} from voice channel")
 	
 	async def play(self):
-		await self.channel(f"{self.user.name} has continued the song")
+		return await self.channel(f"⏯ {self.user.name} has continued the song")
 	
 	async def pause(self):
-		await self.channel(f"{self.user.name} has paused the song")
+		return await self.channel(f"⏯ {self.user.name} has paused the song")
 	
 	async def loop_on(self):
-		await self.channel("Loop current song is turned on")
+		return await self.channel("🔂 Loop current song is turned on")
 	
 	async def loop_off(self):
-		await self.channel("Loop current song is turned off")
+		return await self.channel("🔂 Loop current song is turned off")
 
 	async def loop_all_on(self):
-		await self.channel("Loop all songs is turned on")
+		return await self.channel("🔁 Loop all songs is turned on")
 	
 	async def loop_all_off(self):
-		await self.channel("Loop all songs is turned off")
+		return await self.channel("🔁 Loop all songs is turned off")
 	
 	async def setup(self, channel):
-		await self.send(f"Channel is created as {channel.mention}")
+		return await self.send(f"🧱 Channel is created as {channel.mention}")
 	
 	async def unsetup(self):
-		await self.send("Deleted setup channel")
+		return await self.send("❌ Deleted setup channel")
 	
 	async def clear(self):
-		await self.channel(f"{self.bot.name} has disconnected from voice channel")
+		return await self.channel(f"⭕ {self.bot.name} has disconnected from voice channel")
 
 	async def exist(self, channel):
-		await self.send(f"{self.bot.name}'s channel is already exsit {channel.mention}")
+		return await self.send(f"😊 {self.bot.name}'s channel is already exsit {channel.mention}")
 	
 	async def not_exist(self):
-		await self.send(f"{self.bot.name} is not have setup channel now")
+		return await self.send(f"🥪 {self.bot.name} is not have setup channel now")
 
 	async def not_found(self):
-		await self.send(f"{self.bot.name} cannot found that sound")
+		return await self.send(f"🥧 {self.bot.name} cannot found that sound")
 
+class Source:
+
+	def __init__(self, ctx):
+		self.send = Sender(ctx).send
+		self.channel = Sender(ctx.channel).send
+		self.bot = ctx.bot.user
+
+	async def play(self, channel):
+		return await self.send(f"🔊 {self.bot.name} is now playing sound in {channel.mention} channel")

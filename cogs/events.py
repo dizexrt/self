@@ -14,14 +14,16 @@ class Event(commands.Cog):
 		channel = voice.player.find(message.channel.guild)
 
 		if message.channel == channel:
-			if message.author.bot: return await message.edit(delete_after = 3)
+			if message.author.bot: 
+				if message.content == 'play sound':return
+				return await message.edit(delete_after = 3)
 			source = message
 			await message.delete()
 			return await voice.play(source)
 		
 		if message.author.bot : return
 
-		self.client.process_commands(message)
+		await self.client.process_commands(message)
 	
 	@commands.Cog.listener()
 	async def on_ready(self):
@@ -33,6 +35,12 @@ class Event(commands.Cog):
 
 		log = ctx.custom_id
 
+		if log == 'stop':
+			if await voice.stop_component(ctx):
+				return await ctx.edit_origin(content = '')
+
+		await ctx.edit_origin(content = '')
+		
 		if log == 'play':
 			await voice.player.play(ctx)
 		
@@ -56,8 +64,6 @@ class Event(commands.Cog):
 
 		elif log == 'previous':
 			await voice.player.prev_q(ctx)
-		
-		await ctx.edit_origin(content = '')
 
 #setup command
 def setup(client):

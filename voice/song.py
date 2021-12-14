@@ -78,6 +78,46 @@ class YoutubeInfo:
 		self.duration = f"{int(t/3600)}h:{int(t%3600/60)}m:{int(t%3600%60)}s"
 
 
+class Source(discord.PCMVolumeTransformer):
+
+	def __init__(self, source, message):
+		super().__init__(source)
+		self.message = message
+
+	def __getitem__(self, item: str):
+		return self.__getattribute__(item)
+
+	@classmethod
+	async def pull(cls, name:str, message, *, loop):
+		loop = loop or asyncio.get_event_loop()
+		to_run = partial(Data.set, name = name, message = message)
+		data = await loop.run_in_executor(None, to_run)
+		return data
+
+	@classmethod
+	async def regather_stream(cls, data, *, loop):
+		loop = loop or asyncio.get_event_loop()
+		to_run = partial(Data.get, name = data.name, message = data.message)
+		data = await loop.run_in_executor(None, to_run)
+
+		return cls(discord.FFmpegPCMAudio(data.path), data.message)
+	
+class Data:
+
+	def __init__(self, name, message):
+		self.name = name
+		self.message = message
+	
+	@classmethod
+	def set(cls, name, message):
+		return cls(name, message)
+
+	@classmethod
+	def get(cls, name, message):
+		cls = cls(name, message)
+		cls.path = f"voice/source/{name}.mp3"
+		return cls
+
 class MusicPlayer:
 
 	def __init__(self, ctx):
@@ -122,22 +162,29 @@ class MusicPlayer:
 				return await self.destroy()
 
 			#if can play source
-			if not isinstance(qsource, YTDLSource):
+			if not isinstance(qsource, YTDLSource) and not self.player is None:
 				try:
 					source = await YTDLSource.regather_stream(qsource, loop=self.client.loop)
 				except:
 					await self.alert.player.error()
 					continue
+			
+			if not isinstance(qsource, Source) and self.player is None:
+				try:
+					source = await Source.regather_stream(qsource, loop=self.client.loop)
+				except:
+					await self.alert.player.error()
+					continue
 					
-			source.volume = 5
+			source.volume = 1
 
 			if self._guild.voice_client is None:
 				await self.player.clear()
 				await self.queue_list.clear()
 				return
 
-			if self.loop: loop = 'one'
-			elif self.loop_all: loop = 'all'
+			if self.loop and not self.player is None: loop = 'one'
+			elif self.loop_all and not self.player is None: loop = 'all'
 			else: loop = None
 
 			try:
@@ -145,30 +192,35 @@ class MusicPlayer:
 			except:
 				await self.alert.player.error()
 
-			if not self.loop:
+			if not self.loop and not self.player is None:
 				await self.player.update(source.info, loop = loop)
 				await self.queue_list.pop()
 
 			await self.next_event.wait()
 
-			if self.loop:
+			if self.loop and not self.player is None:
 				self.current = qsource
 
-			if self.loop_all:
+			if self.loop_all and not self.player is None:
 				await self.queue.put(qsource)
 				await self.queue_list.update(qsource)
-				
+			
+			if self.player is None:
+				await qsource.message.edit(delete_after = 3)
 			# Make sure the FFmpeg process is cleaned up.
 			source.cleanup()
-			if not self.loop:
+			if not self.loop and not self.player is None:
 				await self.player.clear()
+
 
 	async def destroy(self):
 		try:
 			await self._guild.voice_client.disconnect()
 		except:pass
-		await self.player.clear()
-		await self.queue_list.clear()
+
+		if self.player is not None:
+			await self.player.clear()
+			await self.queue_list.clear()
 		return await self.alert.player.clear()
 
 ############
@@ -211,28 +263,39 @@ class SongAPI:
 	async def unsetup(self, guild:discord.Guild):
 		await Player.unsetup(guild)
 
-	async def put(self, message:discord.Message, first:bool):
+	async def put(self, message:discord.Message):
 		ctx = await self.client.get_context(message)
 		guild = message.channel.guild
 		
-		if first:
-			try:
-				del self.players[guild.id]
-			except:
-				pass
 			
-			_player = self.get_player(ctx)
-			p = await Player.pull(guild)
+		_player = self.get_player(ctx)
+		p = await Player.pull(guild)
+
+		if _player.player is None:
 			_player.queue_list = p.queue
 			_player.player = p.player
 			self.update(guild, _player)
-		
-		_player = self.get_player(ctx)
+			_player = self.get_player(ctx)
+
 		source = await YTDLSource.create_source(message, loop=self.client.loop)
 
 		for _ in source:
 			await _player.queue.put(_)
 			await _player.queue_list.update(_)
+
+	async def put_source(self, ctx, name, message):
+		guild = ctx.channel.guild
+
+		_player = self.get_player(ctx)
+
+		if _player.player is not None:
+			_player.player = None
+			_player.queue_list = None
+			self.update(guild, _player)
+			_player = self.get_player(ctx)
+		
+		source = await Source.pull(name, message, loop=self.client.loop)
+		await _player.queue.put(source)
 	
 	def check(self, ctx):
 		if ctx.author.voice is not None and ctx.voice_client is not None:
@@ -298,6 +361,9 @@ class SongAPI:
 		_player = self.get_player(ctx)
 		alert = Alert.music(ctx)
 
+		if not self.check(ctx):
+			return await alert.user.mustbe_together(ctx.bot.user)
+
 		if option == 'one':
 			if _player.loop == True:
 				_player.loop = False
@@ -314,7 +380,7 @@ class SongAPI:
 			if _player.loop_all == True:
 				_player.loop_all = False
 				await _player.player.update_loop('off')
-				await alert.player.looop_all_off()
+				await alert.player.loop_all_off()
 			else:
 				_player.loop = False
 				_player.loop_all = True
