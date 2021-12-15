@@ -11,67 +11,53 @@ class Voice:
 	
 	#play music from song.py
 	async def play(self, message):
-
 		ctx = await self.client.get_context(message)
 		log = VoiceState(ctx)
-		alert = Alert.voice(ctx)
+		alert = Alert.music(ctx)
 
 		if not log.user:
 			return await alert.user.must_join()
 
-		if log.user and not log.bot:
+		if log.bot and not log.together and not log.bot_alone:
+			return await alert.user.mustbe_together(ctx.bot.user)
+		
+		if log.bot and not log.together and log.bot_alone:
+			await ctx.voice_client.move_to(ctx.author.voice.channel)
+			await alert.bot.join(ctx.voice_client.channel)
 
+		if not log.bot:
 			await ctx.author.voice.channel.connect()
 			await alert.bot.join(ctx.voice_client.channel)
-			return await self.player.put(message)
-		
-		#bot not free
-		if log.bot:
 
-			if not log.together:
-
-				if not log.bot_alone:
-					return await alert.user.mustbe_together(ctx.bot.user)
-				
-				if log.bot_alone:
-					await ctx.voice_client.move_to(ctx.author.voice.channel)
-					return await self.player.put(message)
-
-			if log.together:
-				return await self.player.put(message)
+		complete = await self.player.put(message)
+		if not complete:
+			await alert.player.error()
 	
+	#play music by using slash command
 	async def play_slash(self, ctx, query, channel):
-
 		log = VoiceState(ctx)
-		alert = Alert.voice(ctx)
+		alert = Alert.music(ctx)
 
 		if not log.user:
 			return await alert.user.must_join()
 
-		if log.user and not log.bot:
-
-			await ctx.author.voice.channel.connect()
-			await alert.bot.add(channel)
-			return await self.player.put_query(ctx, query)
+		if log.bot and not log.together and not log.bot_alone:
+			return await alert.user.mustbe_together(ctx.bot.user)
 		
-		#bot not free
-		if log.bot:
+		if log.bot and not log.together and log.bot_alone:
+			await ctx.voice_client.move_to(ctx.author.voice.channel)
+			await alert.bot.join(ctx.voice_client.channel)
 
-			if not log.together:
+		if not log.bot:
+			await ctx.author.voice.channel.connect()
+			await alert.bot.join(ctx.voice_client.channel)
 
-				if not log.bot_alone:
-					return await alert.user.mustbe_together(ctx.bot.user)
-				
-				if log.bot_alone:
-					await ctx.voice_client.move_to(ctx.author.voice.channel)
-					await alert.bot.add(channel)
-					return await self.player.put_query(ctx, query)
-
-			if log.together:
-				await alert.bot.add(channel)
-				return await self.player.put_query(ctx, query)
+		await alert.bot.add(channel)
+		complete = await self.player.put_query(ctx, query)
+		if not complete:
+			await alert.player.error()
 	
-	#play music from song.py
+	#play source with command
 	async def play_source(self, ctx, name):
 		log = VoiceState(ctx)
 		alert = Alert.source(ctx)
@@ -79,36 +65,20 @@ class Voice:
 		if not log.user:
 			return await alert.user.must_join()
 
-		if log.user and not log.bot:
+		if log.bot and not log.together and not log.bot_alone:
+			return await alert.user.mustbe_together(ctx.bot.user)
 
-			await ctx.author.voice.channel.connect()
-			message = await alert.source.play(ctx.voice_client.channel)
-			return await self.player.put_source(ctx, name, message)
+		if log.bot and log.together and ctx.voice_clint.is_playing():
+			return await alert.bot.busy()
 		
-		#bot not free
-		if log.bot:
+		if log.bot and not log.together and log.bot_alone:
+			await ctx.voice_client.move_to(ctx.author.voice.channel)
 
-			if not log.together:
+		if not log.bot:
+			await ctx.author.voice.channel.connect()
 
-				if not log.bot_alone:
-					return await alert.user.mustbe_together(ctx.bot.user)
-				
-				if log.bot_alone:
-					await ctx.voice_client.move_to(ctx.author.voice.channel)
-					if not ctx.voice_client.is_playing():
-						message = await alert.source.play(ctx.voice_client.channel)
-						return await self.player.put_source(ctx, name, message)
-					else:
-						await alert.bot.move_and_wait(ctx.voice_client.channel)
-
-			if log.together:
-				if not ctx.voice_client.is_playing():
-					message = await alert.source.play(ctx.voice_client.channel)
-					return await self.player.put_source(ctx, name, message)
-				
-				else:
-					return await alert.bot.busy()
-			
+		message = await alert.source.play(ctx.voice_client.channel)
+		await self.player.put_source(ctx, name, message)
 
 	#stop playing sound slash
 	async def stop(self, ctx):

@@ -13,9 +13,8 @@ youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
-    'yesplaylist': True,
+    'noplaylist': False,
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': False,
@@ -47,9 +46,15 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		loop = loop or asyncio.get_event_loop()
 
 		to_run = partial(ytdl.extract_info, url = message.content, download = False)
-		data = await loop.run_in_executor(None, to_run)
 
-		if 'entries' in data:
+		try:
+			data = await loop.run_in_executor(None, to_run)
+		except:
+			data = None
+
+		if data is None:
+			source = None
+		elif 'entries' in data:
 			source = [YoutubeInfo(_, message.author) for _ in data['entries']]
 		else:
 			source = [(YoutubeInfo(data, message.author))]
@@ -61,14 +66,21 @@ class YTDLSource(discord.PCMVolumeTransformer):
 		loop = loop or asyncio.get_event_loop()
 
 		to_run = partial(ytdl.extract_info, url = query, download = False)
-		data = await loop.run_in_executor(None, to_run)
 
-		if 'entries' in data:
+		try:
+			data = await loop.run_in_executor(None, to_run)
+		except:
+			data = None
+
+		if data is None:
+			source = None
+		elif 'entries' in data:
 			source = [YoutubeInfo(_, author) for _ in data['entries']]
 		else:
 			source = [(YoutubeInfo(data, author))]
-
+		
 		return source
+			
 
 	@classmethod
 	async def regather_stream(cls, source, *, loop):
@@ -290,9 +302,12 @@ class SongAPI:
 
 		source = await YTDLSource.create_source(message, loop=self.client.loop)
 
+		if source is None:
+			return False
 		for _ in source:
 			await _player.queue.put(_)
 			await _player.queue_list.update(_)
+			return True
 	
 	async def put_query(self, ctx, query:str):
 		guild = ctx.channel.guild
@@ -308,9 +323,12 @@ class SongAPI:
 
 		source = await YTDLSource.create_source_query(query, ctx.author, loop=self.client.loop)
 
+		if source is None:
+			return False
 		for _ in source:
 			await _player.queue.put(_)
 			await _player.queue_list.update(_)
+			return True
 
 	async def put_source(self, ctx, name, message):
 		guild = ctx.channel.guild
